@@ -10,7 +10,7 @@
     "jsonwebtoken": "^9.0.2"
   }, 
     "scripts": {
-    "start": "node index.js",
+    "start": "npx prisma generate && node index.js",
     "dev": "nodemon index.js"
   }
 }
