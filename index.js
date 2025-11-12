@@ -16,7 +16,7 @@ app.use(cors({
 }));
 
 
-app.use(cors());
+// app.use(cors());
 
 
 app.post('/login', async (req,res)=>{
