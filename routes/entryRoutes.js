@@ -5,8 +5,56 @@ import { protect } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
-// Get all entries
+// Get all entries with pagination, sorting, and filtering
 router.get('/', protect, async (req, res) => {
+    try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const skip = (page - 1) * limit;
+
+        const { sortBy, order, search, mood } = req.query;
+
+        // Build query
+        const query = { user: req.user._id };
+
+        if (search) {
+            query.content = { $regex: search, $options: 'i' };
+        }
+
+        if (mood && mood !== 'all') {
+            query.mood_label = mood;
+        }
+
+        // Build sort object
+        let sort = {};
+        if (sortBy === 'oldest') {
+            sort.created_at = 1;
+        } else {
+            // Default to newest
+            sort.created_at = -1;
+        }
+
+        const count = await Entry.countDocuments(query);
+        const entries = await Entry.find(query)
+            .sort(sort)
+            .skip(skip)
+            .limit(limit);
+
+        res.json({
+            entries,
+            pagination: {
+                total: count,
+                page,
+                pages: Math.ceil(count / limit),
+            },
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// Get all entries without pagination (for analytics)
+router.get('/all', protect, async (req, res) => {
     try {
         const entries = await Entry.find({ user: req.user._id }).sort({ created_at: -1 });
         res.json(entries);
